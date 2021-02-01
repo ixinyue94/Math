@@ -1,0 +1,64 @@
+# 加载第三包
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+
+data = pd.read_excel('***.xlsx')
+
+# 中文和负号的正常显示
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']
+plt.rcParams['axes.unicode_minus'] = False
+# 设置绘图风格
+plt.style.use('ggplot')
+
+# 绘制散点图
+data.plot(x='常住人口数',y='工作人口数',kind='scatter')
+plt.show()
+
+# 选择最佳的K值
+X = data[['常住人口数', '工作人口数']]
+name = data['站点名称']
+K = range(1, int(np.sqrt(data.shape[0])))
+GSSE = []
+for k in K:
+    SSE = []
+    kmeans = KMeans(n_clusters=k, random_state=10)
+    kmeans.fit(X)
+    labels = kmeans.labels_
+    centers = kmeans.cluster_centers_
+    for label in set(labels):
+        SSE.append(np.sum(np.sum((data[['常住人口数', '工作人口数']].loc[labels == label,] - centers[label, :]) ** 2)))
+    GSSE.append(np.sum(SSE))
+
+# 绘制K的个数与GSSE的关系
+plt.plot(K, GSSE, 'b*-')
+plt.xlabel('聚类个数')
+plt.ylabel('簇内离差平方和')
+plt.title('选择最优的聚类个数')
+plt.show()
+
+#调用sklearn的库函数
+num_clusters = 5
+kmeans = KMeans(n_clusters=num_clusters, random_state=1)
+kmeans.fit(X)
+
+# 聚类结果标签
+data['cluster'] = kmeans.labels_
+
+# 聚类中心
+centers = kmeans.cluster_centers_
+
+# 绘制散点图
+x = X.iloc[:,0]
+y = X.iloc[:,1]
+plt.scatter(x, y, c = data['cluster'], s=50, cmap='rainbow')
+plt.scatter(centers[:,0], centers[:,1], c='k', marker = '*', s = 180)
+plt.xlabel('常住人口数')
+plt.ylabel('工作人口数')
+#加标签
+for i,txt in enumerate(name):
+    plt.annotate(txt,(x[i],y[i]))
+# 图形显示
+plt.show()
+
